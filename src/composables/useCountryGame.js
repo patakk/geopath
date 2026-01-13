@@ -375,6 +375,11 @@ function getDisplayName(code) {
   return codeToNames[code]?.[0] || code
 }
 
+// Get all searchable country names (primary names only, for autocomplete)
+function getAllCountryNames() {
+  return Object.keys(codeToNames).map(code => codeToNames[code][0])
+}
+
 // Reverse lookup: map TopoJSON name to our code
 function topoNameToCode(name) {
   if (!name) return null
@@ -650,6 +655,7 @@ export function useCountryGame() {
     totalToFind,
     normalizeCountryName,
     getDisplayName,
+    getAllCountryNames,
     startNewGame,
     makeGuess,
     endGame,

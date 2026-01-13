@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import WorldMap from './components/WorldMap.vue'
 import { useCountryGame } from './composables/useCountryGame'
 
@@ -64,6 +64,7 @@ const {
   totalToFind,
   normalizeCountryName,
   getDisplayName,
+  getAllCountryNames,
   startNewGame,
   makeGuess,
   endGame,
@@ -71,13 +72,49 @@ const {
 } = useCountryGame()
 
 const inputRef = ref(null)
+const selectedSuggestion = ref(-1)
+const showSuggestions = ref(false)
+
+const suggestions = computed(() => {
+  const input = countryInput.value.trim().toLowerCase()
+  if (!input || input.length < 1) return []
+
+  const allNames = getAllCountryNames()
+  return allNames
+    .filter(name => name.toLowerCase().includes(input))
+    .sort((a, b) => {
+      // Prioritize names that start with the input
+      const aStarts = a.toLowerCase().startsWith(input)
+      const bStarts = b.toLowerCase().startsWith(input)
+      if (aStarts && !bStarts) return -1
+      if (!aStarts && bStarts) return 1
+      return a.localeCompare(b)
+    })
+    .slice(0, 8)
+})
 
 function handleCountriesLoaded(names) {
   allCountryNames.value = names
 }
 
+function selectSuggestion(name) {
+  countryInput.value = name
+  showSuggestions.value = false
+  selectedSuggestion.value = -1
+  makeGuess(name)
+  if (inputRef.value) {
+    inputRef.value.focus()
+  }
+}
+
 function handleGuessSubmit() {
-  makeGuess(countryInput.value)
+  if (selectedSuggestion.value >= 0 && suggestions.value[selectedSuggestion.value]) {
+    selectSuggestion(suggestions.value[selectedSuggestion.value])
+  } else {
+    makeGuess(countryInput.value)
+  }
+  showSuggestions.value = false
+  selectedSuggestion.value = -1
   if (inputRef.value) {
     inputRef.value.focus()
   }
@@ -106,9 +143,26 @@ function handleStartGame() {
 }
 
 function handleKeydown(e) {
-  if (e.key === 'Enter') {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    if (suggestions.value.length > 0) {
+      showSuggestions.value = true
+      selectedSuggestion.value = Math.min(selectedSuggestion.value + 1, suggestions.value.length - 1)
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    selectedSuggestion.value = Math.max(selectedSuggestion.value - 1, -1)
+  } else if (e.key === 'Enter') {
     handleGuessSubmit()
+  } else if (e.key === 'Escape') {
+    showSuggestions.value = false
+    selectedSuggestion.value = -1
   }
+}
+
+function handleInput() {
+  showSuggestions.value = true
+  selectedSuggestion.value = -1
 }
 
 // Clear last guess result after a delay
@@ -234,20 +288,37 @@ watch(gameWon, (won) => {
         </div>
 
         <div v-else class="guess-section">
-          <div class="input-wrapper">
-            <input
-              ref="inputRef"
-              v-model="countryInput"
-              type="text"
-              placeholder="Enter country name..."
-              class="guess-input"
-              @keydown="handleKeydown"
-              :class="{
-                'error': lastGuessResult === 'wrong' || lastGuessResult === 'invalid',
-                'success': lastGuessResult === 'correct'
-              }"
-            />
-            <button class="guess-btn" @click="handleGuessSubmit">Guess</button>
+          <div class="input-container">
+            <div class="input-wrapper">
+              <input
+                ref="inputRef"
+                v-model="countryInput"
+                type="text"
+                placeholder="Enter country name..."
+                class="guess-input"
+                @keydown="handleKeydown"
+                @input="handleInput"
+                @focus="showSuggestions = true"
+                @blur="setTimeout(() => showSuggestions = false, 150)"
+                autocomplete="off"
+                :class="{
+                  'error': lastGuessResult === 'wrong' || lastGuessResult === 'invalid',
+                  'success': lastGuessResult === 'correct'
+                }"
+              />
+              <button class="guess-btn" @click="handleGuessSubmit">Guess</button>
+            </div>
+            <div v-if="showSuggestions && suggestions.length > 0" class="suggestions">
+              <div
+                v-for="(suggestion, index) in suggestions"
+                :key="suggestion"
+                class="suggestion"
+                :class="{ selected: index === selectedSuggestion }"
+                @mousedown.prevent="selectSuggestion(suggestion)"
+              >
+                {{ suggestion }}
+              </div>
+            </div>
           </div>
           <div class="feedback" v-if="lastGuessResult">
             <span v-if="lastGuessResult === 'correct'" class="correct">Correct!</span>
@@ -651,9 +722,40 @@ watch(gameWon, (won) => {
   gap: 8px;
 }
 
+.input-container {
+  position: relative;
+}
+
 .input-wrapper {
   display: flex;
   gap: 6px;
+}
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+.suggestion {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.suggestion:hover,
+.suggestion.selected {
+  background: var(--btn-bg);
 }
 
 .guess-input {
