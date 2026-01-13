@@ -136,7 +136,7 @@ function getCountryStroke(feature) {
     return 'transparent'
   }
 
-  return '#444'
+  return '#333'
 }
 
 function updateLabelSizes() {
@@ -399,6 +399,10 @@ function centerOnCountry(countryName) {
     countriesGroup.attr('transform', transform)
     labelsGroup.attr('transform', transform)
     updateLabelSizes()
+    // Reset stroke width to match zoom level
+    const baseStroke = isMobile() ? 0.4 : 0.75
+    countriesGroup.selectAll('.country')
+      .attr('stroke-width', baseStroke / currentZoom)
   }
 }
 
@@ -463,7 +467,7 @@ onUnmounted(() => {
 .map-container {
   width: 100%;
   height: 100%;
-  background-color: #000;
+  background-color: #657b86;
   cursor: grab;
 }
 
