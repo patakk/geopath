@@ -467,7 +467,7 @@ onUnmounted(() => {
 .map-container {
   width: 100%;
   height: 100%;
-  background-color: #657b86;
+  background-color: #121212;
   cursor: grab;
 }
 
