@@ -422,6 +422,7 @@ watch(gameWon, (won) => {
   gap: 12px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   min-width: 280px;
+  touch-action: none;
 }
 
 .game-intro {
