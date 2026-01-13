@@ -306,6 +306,13 @@ function setupInteraction() {
   } else {
     const zoom = d3.zoom()
       .scaleExtent([0.5, 20])
+      .filter((event) => {
+        // On mobile, disable pinch-zoom (multi-touch) but allow pan and wheel
+        if (isMobile() && event.type === 'touchstart' && event.touches?.length > 1) {
+          return false
+        }
+        return !event.ctrlKey && !event.button
+      })
       .on('start', () => {
         // Interrupt any ongoing transitions to allow immediate interaction
         svg.interrupt()
@@ -458,6 +465,7 @@ onUnmounted(() => {
   height: 100%;
   background-color: #000;
   cursor: grab;
+  touch-action: pan-x pan-y;
 }
 
 .map-container:active {
