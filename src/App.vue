@@ -1,11 +1,38 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import WorldMap from './components/WorldMap.vue'
 import { useCountryGame } from './composables/useCountryGame'
 
 const showLabels = ref(true)
 const currentProjection = ref('mercator')
 const projectionsExpanded = ref(false)
+
+// Theme toggle
+const isDark = ref(false)
+
+function initTheme() {
+  const saved = localStorage.getItem('theme')
+  if (saved) {
+    isDark.value = saved === 'dark'
+  } else {
+    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+  }
+  applyTheme()
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+}
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  applyTheme()
+}
+
+onMounted(() => {
+  initTheme()
+})
 
 const projections = [
   { id: 'mercator', label: 'Mercator' },
@@ -131,6 +158,17 @@ watch(gameWon, (won) => {
         <span class="checkbox"></span>
         <span>Show country names</span>
       </label>
+      <div class="divider"></div>
+      <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+        <svg v-if="isDark" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="5"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg v-else class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <span>{{ isDark ? 'Light mode' : 'Dark mode' }}</span>
+      </button>
     </div>
 
     <!-- Game Panel -->
@@ -232,6 +270,7 @@ watch(gameWon, (won) => {
       :wrong-guesses="wrongGuesses"
       :normalize-country-name="normalizeCountryName"
       :get-display-name="getDisplayName"
+      :is-dark="isDark"
       @countries-loaded="handleCountriesLoaded"
     />
   </div>
@@ -249,10 +288,10 @@ watch(gameWon, (won) => {
   top: 16px;
   left: 16px;
   z-index: 100;
-  background: rgba(20, 20, 20, 0.95);
+  background: var(--bg-panel);
   padding: 12px 14px;
   border-radius: 6px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -271,9 +310,9 @@ watch(gameWon, (won) => {
   gap: 8px;
   padding: 6px 8px;
   background: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--border-secondary);
   border-radius: 4px;
-  color: #808080;
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -281,8 +320,8 @@ watch(gameWon, (won) => {
 }
 
 .projection-header:hover {
-  border-color: #444;
-  color: #999;
+  border-color: var(--border-tertiary);
+  color: var(--text-secondary);
 }
 
 .projection-header .icon {
@@ -319,34 +358,34 @@ watch(gameWon, (won) => {
   font-family: inherit;
   font-weight: 400;
   background: transparent;
-  border: 1px solid #333;
+  border: 1px solid var(--border-secondary);
   border-radius: 4px;
-  color: #606060;
+  color: var(--text-dimmed);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .projection-btn:hover {
-  border-color: #444;
-  color: #808080;
+  border-color: var(--border-tertiary);
+  color: var(--text-muted);
 }
 
 .projection-btn.active {
-  background: #2a2a2a;
-  border-color: #444;
-  color: #999;
+  background: var(--btn-bg);
+  border-color: var(--border-tertiary);
+  color: var(--text-secondary);
 }
 
 .divider {
   height: 1px;
-  background: #2a2a2a;
+  background: var(--border-primary);
 }
 
 .toggle {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #707070;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -365,7 +404,7 @@ watch(gameWon, (won) => {
 .checkbox {
   width: 14px;
   height: 14px;
-  border: 1px solid #444;
+  border: 1px solid var(--checkbox-border);
   border-radius: 3px;
   background: transparent;
   display: flex;
@@ -376,16 +415,16 @@ watch(gameWon, (won) => {
 }
 
 .toggle input:checked + .checkbox {
-  background: #555;
-  border-color: #666;
+  background: var(--checkbox-bg);
+  border-color: var(--checkbox-border);
 }
 
 .checkbox::after {
   content: '';
   width: 8px;
   height: 5px;
-  border-left: 1.5px solid #000;
-  border-bottom: 1.5px solid #000;
+  border-left: 1.5px solid var(--checkbox-check);
+  border-bottom: 1.5px solid var(--checkbox-check);
   transform: rotate(-45deg) translateY(-1px);
   opacity: 0;
   transition: opacity 0.15s ease;
@@ -396,11 +435,11 @@ watch(gameWon, (won) => {
 }
 
 .toggle:hover {
-  color: #909090;
+  color: var(--text-secondary);
 }
 
 .toggle:hover .checkbox {
-  border-color: #555;
+  border-color: var(--border-tertiary);
 }
 
 .toggle.disabled {
@@ -409,16 +448,42 @@ watch(gameWon, (won) => {
   pointer-events: none;
 }
 
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-tertiary);
+  color: var(--text-secondary);
+}
+
+.theme-toggle .icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
 /* Game Panel */
 .game-panel {
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 100;
-  background: rgba(20, 20, 20, 0.95);
+  background: var(--bg-panel);
   padding: 14px 16px;
   border-radius: 6px;
-  border: 1px solid #2a2a2a;
+  border: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -436,12 +501,12 @@ watch(gameWon, (won) => {
 .game-title {
   font-size: 14px;
   font-weight: 500;
-  color: #aaa;
+  color: var(--text-secondary);
 }
 
 .game-desc {
   font-size: 12px;
-  color: #606060;
+  color: var(--text-dimmed);
 }
 
 .game-header {
@@ -465,17 +530,17 @@ watch(gameWon, (won) => {
 }
 
 .country.start {
-  background: #1e5650;
-  color: #4adeca;
+  background: var(--game-start-bg);
+  color: var(--game-start-text);
 }
 
 .country.end {
-  background: #b84646;
-  color: #f5cccc;
+  background: var(--game-end-bg);
+  color: var(--game-end-text);
 }
 
 .arrow {
-  color: #505050;
+  color: var(--text-dimmed);
   font-size: 14px;
 }
 
@@ -486,7 +551,7 @@ watch(gameWon, (won) => {
 
 .stat {
   font-size: 12px;
-  color: #606060;
+  color: var(--text-dimmed);
 }
 
 .game-controls {
@@ -503,17 +568,17 @@ watch(gameWon, (won) => {
 
 .paths-header {
   font-size: 11px;
-  color: #606060;
+  color: var(--text-dimmed);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .win-message {
   padding: 10px 12px;
-  background: #1e3a1e;
-  border: 1px solid #2d5a2d;
+  background: var(--accent-green-bg);
+  border: 1px solid var(--accent-green-border);
   border-radius: 4px;
-  color: #4ade80;
+  color: var(--accent-green);
   font-size: 13px;
   font-weight: 500;
   text-align: center;
@@ -525,14 +590,14 @@ watch(gameWon, (won) => {
   align-items: center;
   gap: 4px;
   padding: 8px 10px;
-  background: #151515;
+  background: var(--bg-tertiary);
   border-radius: 4px;
   font-size: 12px;
 }
 
 .path-list.user-path {
-  background: #1a2a1a;
-  border: 1px solid #2d4a2d;
+  background: var(--accent-green-bg);
+  border: 1px solid var(--accent-green-border);
 }
 
 .path-country {
@@ -542,19 +607,19 @@ watch(gameWon, (won) => {
 }
 
 .path-country .start {
-  color: #4adec0;
+  color: var(--accent-green);
 }
 
 .path-country .end {
-  color: #f87171;
+  color: var(--accent-red);
 }
 
 .path-country .middle {
-  color: #60a5fa;
+  color: var(--accent-blue);
 }
 
 .path-arrow {
-  color: #444;
+  color: var(--border-tertiary);
   font-size: 10px;
 }
 
@@ -589,30 +654,30 @@ watch(gameWon, (won) => {
   padding: 8px 10px;
   font-size: 13px;
   font-family: inherit;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 4px;
-  color: #ccc;
+  color: var(--input-text);
   outline: none;
   transition: all 0.15s ease;
 }
 
 .guess-input::placeholder {
-  color: #505050;
+  color: var(--input-placeholder);
 }
 
 .guess-input:focus {
-  border-color: #555;
+  border-color: var(--border-tertiary);
 }
 
 .guess-input.error {
-  border-color: #7b1e1e;
-  background: #1a1212;
+  border-color: var(--accent-red);
+  background: var(--accent-red-bg);
 }
 
 .guess-input.success {
-  border-color: #1e5631;
-  background: #121a14;
+  border-color: var(--accent-green);
+  background: var(--accent-green-bg);
 }
 
 .guess-btn {
@@ -620,17 +685,17 @@ watch(gameWon, (won) => {
   font-size: 12px;
   font-family: inherit;
   font-weight: 500;
-  background: #2a2a2a;
-  border: 1px solid #444;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
   border-radius: 4px;
-  color: #999;
+  color: var(--btn-text);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .guess-btn:hover {
-  background: #333;
-  color: #bbb;
+  background: var(--btn-hover-bg);
+  color: var(--text-secondary);
 }
 
 .feedback {
@@ -639,26 +704,26 @@ watch(gameWon, (won) => {
 }
 
 .feedback .correct {
-  color: #4ade80;
+  color: var(--accent-green);
 }
 
 .feedback .wrong {
-  color: #f87171;
+  color: var(--accent-red);
 }
 
 .feedback .already {
-  color: #fbbf24;
+  color: var(--accent-yellow);
 }
 
 .feedback .invalid {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .game-actions {
   display: flex;
   gap: 6px;
   padding-top: 4px;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--border-primary);
   margin-top: 4px;
 }
 
@@ -668,38 +733,38 @@ watch(gameWon, (won) => {
   font-size: 12px;
   font-family: inherit;
   font-weight: 500;
-  background: #2563eb20;
-  border: 1px solid #2563eb40;
+  background: var(--accent-blue-bg);
+  border: 1px solid var(--accent-blue);
   border-radius: 4px;
-  color: #60a5fa;
+  color: var(--accent-blue);
   cursor: pointer;
   transition: all 0.15s ease;
+  opacity: 0.8;
 }
 
 .game-btn:hover {
-  background: #2563eb30;
-  border-color: #2563eb60;
+  opacity: 1;
 }
 
 .game-btn.start {
-  background: #1e563130;
-  border-color: #1e563150;
-  color: #4ade80;
+  background: var(--accent-green-bg);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
 }
 
 .game-btn.start:hover {
-  background: #1e563150;
-  border-color: #1e563180;
+  opacity: 1;
 }
 
 .game-btn.secondary {
   background: transparent;
-  border-color: #333;
-  color: #606060;
+  border-color: var(--border-secondary);
+  color: var(--text-dimmed);
+  opacity: 1;
 }
 
 .game-btn.secondary:hover {
-  border-color: #444;
-  color: #888;
+  border-color: var(--border-tertiary);
+  color: var(--text-muted);
 }
 </style>

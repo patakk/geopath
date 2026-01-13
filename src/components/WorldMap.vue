@@ -43,6 +43,10 @@ const props = defineProps({
   getDisplayName: {
     type: Function,
     default: (code) => code
+  },
+  isDark: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -103,27 +107,30 @@ function getBaseSize(feature) {
   return 6
 }
 
+function getCSSVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 function getCountryColor(feature) {
   const name = props.normalizeCountryName(feature.properties.name)
 
   if (!props.gameActive) {
-    return '#1a1a1a'
+    return getCSSVar('--country-fill')
   }
 
   if (props.blindMode) {
-    if (name === props.startCountry) return '#1e9871'
-    if (name === props.endCountry) return '#b84646'
-    if (props.guessedCountries.has(name)) return '#2a4a6e'
-    if (props.wrongGuesses.has(name)) return '#5c4a1e'
+    if (name === props.startCountry) return getCSSVar('--game-start-bg')
+    if (name === props.endCountry) return getCSSVar('--game-end-bg')
+    if (props.guessedCountries.has(name)) return getCSSVar('--game-guessed')
+    if (props.wrongGuesses.has(name)) return getCSSVar('--game-wrong')
     return 'transparent'
   }
 
-  // Normal game mode
-  if (name === props.startCountry) return '#1e9871'
-  if (name === props.endCountry) return '#b84646'
-  if (props.guessedCountries.has(name)) return '#2a4a6e'
-  if (props.wrongGuesses.has(name)) return '#5c4a1e'
-  return '#1a1a1a'
+  if (name === props.startCountry) return getCSSVar('--game-start-bg')
+  if (name === props.endCountry) return getCSSVar('--game-end-bg')
+  if (props.guessedCountries.has(name)) return getCSSVar('--game-guessed')
+  if (props.wrongGuesses.has(name)) return getCSSVar('--game-wrong')
+  return getCSSVar('--country-fill')
 }
 
 function getCountryStroke(feature) {
@@ -131,12 +138,12 @@ function getCountryStroke(feature) {
 
   if (props.gameActive && props.blindMode) {
     if (name === props.startCountry || name === props.endCountry || props.guessedCountries.has(name) || props.wrongGuesses.has(name)) {
-      return '#555'
+      return getCSSVar('--border-tertiary')
     }
     return 'transparent'
   }
 
-  return '#333'
+  return getCSSVar('--country-stroke')
 }
 
 function updateLabelSizes() {
@@ -238,12 +245,12 @@ function drawMap() {
     .attr('fill', d => {
       const name = props.normalizeCountryName(d.properties.name)
       if (props.gameActive) {
-        if (name === props.startCountry) return '#4ade80'
-        if (name === props.endCountry) return '#f87171'
-        if (props.guessedCountries.has(name)) return '#60a5fa'
-        if (props.wrongGuesses.has(name)) return '#fbbf24'
+        if (name === props.startCountry) return getCSSVar('--accent-green')
+        if (name === props.endCountry) return getCSSVar('--accent-red')
+        if (props.guessedCountries.has(name)) return getCSSVar('--accent-blue')
+        if (props.wrongGuesses.has(name)) return getCSSVar('--accent-yellow')
       }
-      return '#666'
+      return getCSSVar('--text-muted')
     })
     .attr('font-family', 'Inter, -apple-system, BlinkMacSystemFont, sans-serif')
     .attr('font-weight', '400')
@@ -426,23 +433,30 @@ watch(() => props.projection, () => {
   drawMap()
 })
 
+function updateLabelColors() {
+  if (!labelsGroup) return
+  labelsGroup.selectAll('.country-label')
+    .attr('fill', d => {
+      const name = props.normalizeCountryName(d.properties.name)
+      if (props.gameActive) {
+        if (name === props.startCountry) return getCSSVar('--accent-green')
+        if (name === props.endCountry) return getCSSVar('--accent-red')
+        if (props.guessedCountries.has(name)) return getCSSVar('--accent-blue')
+        if (props.wrongGuesses.has(name)) return getCSSVar('--accent-yellow')
+      }
+      return getCSSVar('--text-muted')
+    })
+}
+
+watch(() => props.isDark, () => {
+  updateCountryStyles()
+  updateLabelColors()
+})
+
 watch([() => props.gameActive, () => props.blindMode, () => props.startCountry, () => props.endCountry, () => props.guessedCountries, () => props.wrongGuesses], () => {
   updateCountryStyles()
   updateLabelPositions()
-  // Update label colors
-  if (labelsGroup) {
-    labelsGroup.selectAll('.country-label')
-      .attr('fill', d => {
-        const name = props.normalizeCountryName(d.properties.name)
-        if (props.gameActive) {
-          if (name === props.startCountry) return '#4ade80'
-          if (name === props.endCountry) return '#f87171'
-          if (props.guessedCountries.has(name)) return '#60a5fa'
-          if (props.wrongGuesses.has(name)) return '#fbbf24'
-        }
-        return '#666'
-      })
-  }
+  updateLabelColors()
 }, { deep: true })
 
 function handleResize() {
@@ -467,7 +481,7 @@ onUnmounted(() => {
 .map-container {
   width: 100%;
   height: 100%;
-  background-color: #121212;
+  background-color: var(--map-bg);
   cursor: grab;
 }
 
@@ -476,11 +490,11 @@ onUnmounted(() => {
 }
 
 .map-container :deep(.country) {
-  transition: fill 0.15s ease, stroke 0.15s ease;
+  transition: fill 0.05s ease, stroke 0.05s ease;
 }
 
 .map-container:not(.game-mode) :deep(.country:hover) {
-  fill: #2a2a2a;
+  fill: var(--country-hover);
 }
 
 @media (max-width: 768px) {

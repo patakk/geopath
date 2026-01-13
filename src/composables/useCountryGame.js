@@ -1,8 +1,6 @@
 import { ref, computed } from 'vue'
 import * as topojson from 'topojson-client'
 
-// Country adjacency data (manually curated for accuracy)
-// This is more reliable than computing from TopoJSON borders
 const adjacencyData = {
     "LIE": ["SWZ", "AUS"],
     "PAR": ["BRA", "BOL", "ARG"],
@@ -19,7 +17,7 @@ const adjacencyData = {
     "GHA": ["CDI", "BFO", "TOG"],
     "SIE": ["GUI", "LBR"],
     "DRC": ["CEN", "CON", "UGA", "TAZ", "BUI", "RWA", "ANG", "ZAM", "SUD"],
-    "PAK": ["IRN", "AFG", "CHN", "IND", "MYA"],
+    "PAK": ["IRN", "AFG", "CHN", "IND"],
     "SIN": ["MAL", "INS"],
     "YUG": ["HUN", "ALB", "MAC", "CRO", "BOS", "MTG", "BUL", "RUM"],
     "JOR": ["IRQ", "EGY", "SYR", "ISR", "SAU"],
@@ -30,7 +28,7 @@ const adjacencyData = {
     "PRK": ["USR", "CHN", "ROK"],
     "KUW": ["IRN", "IRQ", "SAU"],
     "SPN": ["FRN", "AND", "POR", "MOR"],
-    "MYA": ["CHN", "IND", "PAK", "BNG", "THI", "LAO"],
+    "MYA": ["CHN", "IND", "BNG", "THI", "LAO"],
     "KYR": ["TAJ", "UZB", "KZK", "CHN"],
     "UAE": ["SAU", "QAT", "OMA"],
     "SAU": ["IRQ", "EGY", "JOR", "ISR", "YEM", "KUW", "BAH", "QAT", "UAE", "OMA"],
