@@ -39,6 +39,10 @@ const props = defineProps({
   normalizeCountryName: {
     type: Function,
     default: (name) => name
+  },
+  getDisplayName: {
+    type: Function,
+    default: (code) => code
   }
 })
 
@@ -107,16 +111,16 @@ function getCountryColor(feature) {
   }
 
   if (props.blindMode) {
-    if (name === props.startCountry) return '#1e5631'
-    if (name === props.endCountry) return '#7b1e1e'
+    if (name === props.startCountry) return '#1e9871'
+    if (name === props.endCountry) return '#b84646'
     if (props.guessedCountries.has(name)) return '#2a4a6e'
     if (props.wrongGuesses.has(name)) return '#5c4a1e'
     return 'transparent'
   }
 
   // Normal game mode
-  if (name === props.startCountry) return '#1e5631'
-  if (name === props.endCountry) return '#7b1e1e'
+  if (name === props.startCountry) return '#1e9871'
+  if (name === props.endCountry) return '#b84646'
   if (props.guessedCountries.has(name)) return '#2a4a6e'
   if (props.wrongGuesses.has(name)) return '#5c4a1e'
   return '#1a1a1a'
@@ -244,7 +248,10 @@ function drawMap() {
     .attr('font-family', 'Inter, -apple-system, BlinkMacSystemFont, sans-serif')
     .attr('font-weight', '400')
     .attr('pointer-events', 'none')
-    .text(d => d.properties.name || '')
+    .text(d => {
+      const code = props.normalizeCountryName(d.properties.name)
+      return code ? props.getDisplayName(code) : ''
+    })
 
   updateLabelPositions()
   updateLabelSizes()

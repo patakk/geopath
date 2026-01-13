@@ -35,6 +35,7 @@ const {
   foundCount,
   totalToFind,
   normalizeCountryName,
+  getDisplayName,
   startNewGame,
   makeGuess,
   endGame,
@@ -145,9 +146,9 @@ watch(gameWon, (won) => {
       <template v-else>
         <div class="game-header">
           <div class="countries-display">
-            <span class="country start">{{ startCountry }}</span>
+            <span class="country start">{{ getDisplayName(startCountry) }}</span>
             <span class="arrow">→</span>
-            <span class="country end">{{ endCountry }}</span>
+            <span class="country end">{{ getDisplayName(endCountry) }}</span>
           </div>
           <div class="game-stats">
             <span class="stat">{{ foundCount }}/{{ totalToFind }} found</span>
@@ -182,7 +183,7 @@ watch(gameWon, (won) => {
                 'start': index === 0,
                 'end': index === path.length - 1,
                 'middle': index > 0 && index < path.length - 1
-              }">{{ country }}</span>
+              }">{{ getDisplayName(country) }}</span>
               <span v-if="index < path.length - 1" class="path-arrow">→</span>
             </span>
           </div>
@@ -230,6 +231,7 @@ watch(gameWon, (won) => {
       :guessed-countries="guessedCountries"
       :wrong-guesses="wrongGuesses"
       :normalize-country-name="normalizeCountryName"
+      :get-display-name="getDisplayName"
       @countries-loaded="handleCountriesLoaded"
     />
   </div>
@@ -463,13 +465,13 @@ watch(gameWon, (won) => {
 }
 
 .country.start {
-  background: #1e5631;
-  color: #4ade80;
+  background: #1e5650;
+  color: #4adeca;
 }
 
 .country.end {
-  background: #7b1e1e;
-  color: #f87171;
+  background: #b84646;
+  color: #f5cccc;
 }
 
 .arrow {
@@ -540,7 +542,7 @@ watch(gameWon, (won) => {
 }
 
 .path-country .start {
-  color: #4ade80;
+  color: #4adec0;
 }
 
 .path-country .end {
