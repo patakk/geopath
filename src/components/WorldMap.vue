@@ -47,6 +47,10 @@ const props = defineProps({
   isDark: {
     type: Boolean,
     default: false
+  },
+  highDetail: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -59,10 +63,13 @@ let path = null
 let countriesGroup = null
 let labelsGroup = null
 let worldData = null
+let worldDataHighDetail = null
+let worldDataLowDetail = null
 let countriesData = null
 let currentZoom = 1
 
-const WORLD_ATLAS_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
+const WORLD_ATLAS_URL_HIGH = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
+const WORLD_ATLAS_URL_LOW = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
 
 const isMobile = () => window.innerWidth <= 768
 
@@ -364,8 +371,17 @@ async function initMap() {
   countriesGroup = svg.append('g').attr('class', 'countries')
   labelsGroup = svg.append('g').attr('class', 'labels')
 
-  if (!worldData) {
-    worldData = await d3.json(WORLD_ATLAS_URL)
+  // Load and cache both detail levels separately
+  if (props.highDetail) {
+    if (!worldDataHighDetail) {
+      worldDataHighDetail = await d3.json(WORLD_ATLAS_URL_HIGH)
+    }
+    worldData = worldDataHighDetail
+  } else {
+    if (!worldDataLowDetail) {
+      worldDataLowDetail = await d3.json(WORLD_ATLAS_URL_LOW)
+    }
+    worldData = worldDataLowDetail
   }
 
   drawMap()
@@ -431,6 +447,10 @@ watch(() => props.projection, () => {
   if (labelsGroup) labelsGroup.attr('transform', null)
   if (svg) svg.call(d3.zoom().transform, d3.zoomIdentity)
   drawMap()
+})
+
+watch(() => props.highDetail, () => {
+  initMap()
 })
 
 function updateLabelColors() {

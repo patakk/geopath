@@ -6,6 +6,7 @@ import { useCountryGame } from './composables/useCountryGame'
 const showLabels = ref(true)
 const currentProjection = ref('mercator')
 const projectionsExpanded = ref(false)
+const highDetail = ref(false)
 
 // Theme toggle
 const isDark = ref(false)
@@ -158,6 +159,11 @@ watch(gameWon, (won) => {
         <span class="checkbox"></span>
         <span>Show country names</span>
       </label>
+      <label class="toggle">
+        <input type="checkbox" v-model="highDetail" />
+        <span class="checkbox"></span>
+        <span>High detail borders</span>
+      </label>
       <div class="divider"></div>
       <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
         <svg v-if="isDark" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -271,6 +277,7 @@ watch(gameWon, (won) => {
       :normalize-country-name="normalizeCountryName"
       :get-display-name="getDisplayName"
       :is-dark="isDark"
+      :high-detail="highDetail"
       @countries-loaded="handleCountriesLoaded"
     />
   </div>
