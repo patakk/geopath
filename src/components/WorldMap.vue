@@ -58,7 +58,7 @@ let worldData = null
 let countriesData = null
 let currentZoom = 1
 
-const WORLD_ATLAS_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+const WORLD_ATLAS_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
 
 const isMobile = () => window.innerWidth <= 768
 
