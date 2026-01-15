@@ -122,11 +122,8 @@ export function useCountryGame() {
 
     while (attempts < maxAttempts) {
       attempts++
-      //const start = validCountries[Math.floor(Math.random() * validCountries.length)]
-      //const end = validCountries[Math.floor(Math.random() * validCountries.length)]
-
-      const start = 'THI'
-      const end = 'ARM'
+      const start = validCountries[Math.floor(Math.random() * validCountries.length)]
+      const end = validCountries[Math.floor(Math.random() * validCountries.length)]
 
       if (start === end) continue
 
