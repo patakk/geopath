@@ -122,8 +122,11 @@ export function useCountryGame() {
 
     while (attempts < maxAttempts) {
       attempts++
-      const start = validCountries[Math.floor(Math.random() * validCountries.length)]
-      const end = validCountries[Math.floor(Math.random() * validCountries.length)]
+      //const start = validCountries[Math.floor(Math.random() * validCountries.length)]
+      //const end = validCountries[Math.floor(Math.random() * validCountries.length)]
+
+      const start = 'THI'
+      const end = 'ARM'
 
       if (start === end) continue
 
@@ -270,13 +273,13 @@ export function useCountryGame() {
   const sortedPaths = computed(() => {
     if (!allShortestPaths.value.length) return []
 
-    // If game is won, show only possible paths with completed one first
+    // If game is won, show all shortest paths with user's completed path first
     if (gameWon.value) {
       const userPath = userCompletedPath.value
-      if (!userPath) return possiblePaths.value
+      if (!userPath) return allShortestPaths.value
       return [
         userPath,
-        ...possiblePaths.value.filter(p => p !== userPath)
+        ...allShortestPaths.value.filter(p => p !== userPath)
       ]
     }
 
