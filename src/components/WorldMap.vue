@@ -67,6 +67,7 @@ let worldDataHighDetail = null
 let worldDataLowDetail = null
 let countriesData = null
 let currentZoom = 1
+let isDragging = false
 
 const WORLD_ATLAS_URL_HIGH = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
 const WORLD_ATLAS_URL_LOW = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
@@ -175,6 +176,12 @@ function updateLabelSizes() {
 function updateLabelPositions() {
   if (!labelsGroup || !path) return
 
+  // If labels are hidden, just set opacity to 0 and skip expensive calculations
+  if (!props.showLabels) {
+    labelsGroup.selectAll('.country-label').attr('opacity', 0)
+    return
+  }
+
   const sphericalProjections = ['globe', 'stereographic', 'azimuthal', 'gnomonic']
   const isSpherical = sphericalProjections.includes(props.projection)
 
@@ -259,7 +266,7 @@ function drawMap() {
       }
       return getCSSVar('--text-muted')
     })
-    .attr('font-family', 'Inter, -apple-system, BlinkMacSystemFont, sans-serif')
+    .attr('font-family', 'Outfit, sans-serif')
     .attr('font-weight', '400')
     .attr('pointer-events', 'none')
     .text(d => {
@@ -290,6 +297,9 @@ function setupInteraction() {
       .on('start', (event) => {
         rotate0 = projection.rotate()
         coords0 = [event.x, event.y]
+        isDragging = true
+        // Hide labels during drag for performance
+        labelsGroup.style('opacity', 0)
       })
       .on('drag', (event) => {
         const coords1 = [event.x, event.y]
@@ -303,11 +313,18 @@ function setupInteraction() {
 
         projection.rotate(newRotate)
         countriesGroup.selectAll('path').attr('d', path)
+        // Don't update labels during drag - too expensive
+      })
+      .on('end', () => {
+        isDragging = false
+        // Show labels and update positions after drag ends
         updateLabelPositions()
+        labelsGroup.style('opacity', 1)
       })
 
     svg.call(drag)
 
+    let wheelTimeout = null
     svg.on('wheel', (event) => {
       event.preventDefault()
       const scaleFactor = event.deltaY > 0 ? 0.9 : 1.1
@@ -320,8 +337,15 @@ function setupInteraction() {
         currentZoom = newScale / (Math.min(width, height) / 2.2)
         projection.scale(newScale)
         countriesGroup.selectAll('path').attr('d', path)
-        updateLabelPositions()
-        updateLabelSizes()
+
+        // Debounce label updates during wheel
+        labelsGroup.style('opacity', 0)
+        clearTimeout(wheelTimeout)
+        wheelTimeout = setTimeout(() => {
+          updateLabelPositions()
+          updateLabelSizes()
+          labelsGroup.style('opacity', 1)
+        }, 150)
       }
     })
   } else {
@@ -510,11 +534,14 @@ onUnmounted(() => {
 }
 
 .map-container :deep(.country) {
-  transition: fill 0.05s ease, stroke 0.05s ease;
 }
 
 .map-container:not(.game-mode) :deep(.country:hover) {
   fill: var(--country-hover);
+}
+
+.map-container :deep(.labels) {
+  transition: opacity 0.15s ease-out;
 }
 
 @media (max-width: 768px) {

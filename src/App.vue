@@ -37,14 +37,8 @@ onMounted(() => {
 
 const projections = [
   { id: 'mercator', label: 'Mercator' },
-  { id: 'naturalEarth', label: 'Natural Earth' },
-  { id: 'equalEarth', label: 'Equal Earth' },
-  { id: 'equirectangular', label: 'Equirectangular' },
   { id: 'globe', label: 'Globe' },
-  { id: 'stereographic', label: 'Stereographic' },
   { id: 'azimuthal', label: 'Azimuthal' },
-  { id: 'gnomonic', label: 'Gnomonic' },
-  { id: 'conic', label: 'Conic' }
 ]
 
 const {
@@ -74,6 +68,7 @@ const {
 const inputRef = ref(null)
 const selectedSuggestion = ref(-1)
 const showSuggestions = ref(false)
+const panelCollapsed = ref(false)
 
 const suggestions = computed(() => {
   const input = countryInput.value.trim().toLowerCase()
@@ -136,6 +131,7 @@ function handleEndGame() {
 function handleStartGame() {
   showLabels.value = false
   pathRevealed.value = false
+  panelCollapsed.value = false
   startNewGame()
   setTimeout(() => {
     if (inputRef.value) inputRef.value.focus()
@@ -163,6 +159,12 @@ function handleKeydown(e) {
 function handleInput() {
   showSuggestions.value = true
   selectedSuggestion.value = -1
+}
+
+function handleBlur() {
+  setTimeout(() => {
+    showSuggestions.value = false
+  }, 150)
 }
 
 // Clear last guess result after a delay
@@ -232,11 +234,27 @@ watch(gameWon, (won) => {
     </div>
 
     <!-- Game Panel -->
-    <div class="game-panel">
+    <div class="game-panel" :class="{ collapsed: panelCollapsed }">
+      <button
+        v-if="gameActive && (gameWon || pathRevealed)"
+        class="collapse-btn"
+        @click="panelCollapsed = !panelCollapsed"
+      >
+        <svg class="chevron" :class="{ collapsed: panelCollapsed }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9l6 6 6-6"/>
+        </svg>
+      </button>
       <template v-if="!gameActive">
         <div class="game-intro">
           <span class="game-title">Country Path</span>
           <span class="game-desc">Name all countries on the shortest path between two places</span>
+        </div>
+        <div class="game-controls">
+          <label class="toggle small">
+            <input type="checkbox" v-model="blindMode" />
+            <span class="checkbox"></span>
+            <span>Blind mode</span>
+          </label>
         </div>
         <button class="game-btn start" @click="handleStartGame">New Game</button>
       </template>
@@ -253,15 +271,7 @@ watch(gameWon, (won) => {
           </div>
         </div>
 
-        <div class="game-controls">
-          <label class="toggle small">
-            <input type="checkbox" v-model="blindMode" />
-            <span class="checkbox"></span>
-            <span>Blind mode</span>
-          </label>
-        </div>
-
-        <div v-if="gameWon || pathRevealed" class="path-result">
+        <div v-if="gameWon || pathRevealed" class="path-result" v-show="!panelCollapsed">
           <div v-if="gameWon" class="win-message">You found the path!</div>
           <div v-if="sortedPaths.length > 1" class="paths-header">
             {{ sortedPaths.length }} possible paths:
@@ -299,7 +309,7 @@ watch(gameWon, (won) => {
                 @keydown="handleKeydown"
                 @input="handleInput"
                 @focus="showSuggestions = true"
-                @blur="setTimeout(() => showSuggestions = false, 150)"
+                @blur="handleBlur"
                 autocomplete="off"
                 :class="{
                   'error': lastGuessResult === 'wrong' || lastGuessResult === 'invalid',
@@ -328,7 +338,7 @@ watch(gameWon, (won) => {
           </div>
         </div>
 
-        <div class="game-actions">
+        <div class="game-actions" v-show="!panelCollapsed">
           <button class="game-btn secondary" @click="handleReveal">Reveal</button>
           <button class="game-btn secondary" @click="handleEndGame">End Game</button>
           <button class="game-btn" @click="handleStartGame">New Game</button>
@@ -394,7 +404,6 @@ watch(gameWon, (won) => {
   font-family: inherit;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
 .projection-header:hover {
@@ -417,7 +426,6 @@ watch(gameWon, (won) => {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
-  transition: transform 0.15s ease;
 }
 
 .projection-header .chevron.expanded {
@@ -440,7 +448,6 @@ watch(gameWon, (won) => {
   border-radius: 4px;
   color: var(--text-dimmed);
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
 .projection-btn:hover {
@@ -488,7 +495,6 @@ watch(gameWon, (won) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -505,7 +511,6 @@ watch(gameWon, (won) => {
   border-bottom: 1.5px solid var(--checkbox-check);
   transform: rotate(-45deg) translateY(-1px);
   opacity: 0;
-  transition: opacity 0.15s ease;
 }
 
 .toggle input:checked + .checkbox::after {
@@ -538,7 +543,6 @@ watch(gameWon, (won) => {
   font-family: inherit;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
 .theme-toggle:hover {
@@ -630,6 +634,44 @@ watch(gameWon, (won) => {
 .stat {
   font-size: 12px;
   color: var(--text-dimmed);
+}
+
+.collapse-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-dimmed);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.collapse-btn:hover {
+  color: var(--text-secondary);
+}
+
+.collapse-btn .chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.collapse-btn .chevron.collapsed {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+  .collapse-btn .chevron {
+    transform: rotate(180deg);
+  }
+  .collapse-btn .chevron.collapsed {
+    transform: rotate(0deg);
+  }
 }
 
 .game-controls {
@@ -728,7 +770,25 @@ watch(gameWon, (won) => {
 
 .input-wrapper {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+.input-wrapper .guess-input {
+  min-width: 0;
+}
+
+.input-wrapper .guess-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 360px) {
+  .input-wrapper .guess-input {
+    width: 100%;
+  }
+  .input-wrapper .guess-btn {
+    width: 100%;
+  }
 }
 
 .suggestions {
@@ -750,7 +810,6 @@ watch(gameWon, (won) => {
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.1s ease;
 }
 
 .suggestion:hover,
@@ -768,7 +827,6 @@ watch(gameWon, (won) => {
   border-radius: 4px;
   color: var(--input-text);
   outline: none;
-  transition: all 0.15s ease;
 }
 
 .guess-input::placeholder {
@@ -799,7 +857,6 @@ watch(gameWon, (won) => {
   border-radius: 4px;
   color: var(--btn-text);
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
 .guess-btn:hover {
@@ -830,10 +887,17 @@ watch(gameWon, (won) => {
 
 .game-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   padding-top: 4px;
   border-top: 1px solid var(--border-primary);
   margin-top: 4px;
+}
+
+@media (max-width: 360px) {
+  .game-actions .game-btn {
+    flex: 1 1 100%;
+  }
 }
 
 .game-btn {
@@ -847,7 +911,6 @@ watch(gameWon, (won) => {
   border-radius: 4px;
   color: var(--accent-blue);
   cursor: pointer;
-  transition: all 0.15s ease;
   opacity: 0.8;
 }
 
