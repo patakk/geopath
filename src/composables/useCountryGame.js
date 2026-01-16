@@ -39,6 +39,9 @@ export function useCountryGame() {
   const validPathCountries = ref(new Set())
   const countryInput = ref('')
   const gameWon = ref(false)
+  const gameLost = ref(false)
+  const attemptsRemaining = ref(0)
+  const attemptsUsed = ref(0)
   const lastGuessResult = ref(null) // 'correct', 'wrong', 'already', 'invalid'
   const allCountryNames = ref([])
 
@@ -147,6 +150,11 @@ export function useCountryGame() {
         wrongGuesses.value = new Set()
         gameActive.value = true
         gameWon.value = false
+        gameLost.value = false
+        // Max attempts is 1.5x the minimum steps needed (path length - 2)
+        const minSteps = path.length - 2
+        attemptsRemaining.value = Math.ceil(minSteps * 1.5)
+        attemptsUsed.value = 0
         lastGuessResult.value = null
         countryInput.value = ''
         return true
@@ -178,7 +186,7 @@ export function useCountryGame() {
   }
 
   function makeGuess(guess) {
-    if (!gameActive.value || gameWon.value) return
+    if (!gameActive.value || gameWon.value || gameLost.value) return
 
     const normalizedGuess = guess.trim()
     if (!normalizedGuess) return
@@ -188,13 +196,19 @@ export function useCountryGame() {
 
     if (!matchedCode) {
       lastGuessResult.value = 'invalid'
+      // Invalid guesses don't cost attempts
       return
     }
 
     if (guessedCountries.value.has(matchedCode) || wrongGuesses.value.has(matchedCode)) {
       lastGuessResult.value = 'already'
+      // Already guessed doesn't cost attempts
       return
     }
+
+    // This is a valid new guess - costs an attempt
+    attemptsRemaining.value--
+    attemptsUsed.value++
 
     // Check if this country appears in any of the possible paths
     const pathsWithCountry = possiblePaths.value.filter(path => path.includes(matchedCode))
@@ -220,6 +234,11 @@ export function useCountryGame() {
       lastGuessResult.value = 'wrong'
       countryInput.value = ''
     }
+
+    // Check lose condition - no attempts left and haven't won
+    if (attemptsRemaining.value <= 0 && !gameWon.value) {
+      gameLost.value = true
+    }
   }
 
   function endGame() {
@@ -233,6 +252,9 @@ export function useCountryGame() {
     wrongGuesses.value = new Set()
     validPathCountries.value = new Set()
     gameWon.value = false
+    gameLost.value = false
+    attemptsRemaining.value = 0
+    attemptsUsed.value = 0
     lastGuessResult.value = null
     countryInput.value = ''
   }
@@ -251,6 +273,20 @@ export function useCountryGame() {
   const totalToFind = computed(() => {
     // Need to find (path length - 2) countries to win
     return Math.max(0, shortestPath.value.length - 2)
+  })
+
+  const maxAttempts = computed(() => {
+    return Math.ceil(totalToFind.value * 1.5)
+  })
+
+  const isPerfect = computed(() => {
+    // Perfect if won using exactly the minimum number of steps
+    return gameWon.value && attemptsUsed.value === totalToFind.value
+  })
+
+  const extraAttemptsUsed = computed(() => {
+    // How many extra attempts beyond minimum were used
+    return Math.max(0, attemptsUsed.value - totalToFind.value)
   })
 
   // Find if user completed a valid path and return it
@@ -296,6 +332,12 @@ export function useCountryGame() {
     wrongGuesses,
     countryInput,
     gameWon,
+    gameLost,
+    attemptsRemaining,
+    attemptsUsed,
+    maxAttempts,
+    isPerfect,
+    extraAttemptsUsed,
     lastGuessResult,
     allCountryNames,
     foundCount,

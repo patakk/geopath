@@ -420,6 +420,35 @@ function centerOnCountry(countryName) {
   if (!feature) return
 
   const centroid = d3.geoCentroid(feature)
+  centerOnCoordinates(centroid)
+}
+
+function centerOnMidpoint(country1, country2) {
+  if (!countriesData || !country1 || !country2 || !svg) return
+
+  const feature1 = countriesData.features.find(
+    f => props.normalizeCountryName(f.properties.name) === country1
+  )
+  const feature2 = countriesData.features.find(
+    f => props.normalizeCountryName(f.properties.name) === country2
+  )
+  if (!feature1 || !feature2) return
+
+  const centroid1 = d3.geoCentroid(feature1)
+  const centroid2 = d3.geoCentroid(feature2)
+
+  // Calculate midpoint (simple average for geographic coordinates)
+  const midpoint = [
+    (centroid1[0] + centroid2[0]) / 2,
+    (centroid1[1] + centroid2[1]) / 2
+  ]
+
+  centerOnCoordinates(midpoint)
+}
+
+function centerOnCoordinates(coords) {
+  if (!svg) return
+
   const container = mapContainer.value
   const width = container.clientWidth
   const height = container.clientHeight
@@ -428,13 +457,13 @@ function centerOnCountry(countryName) {
   const isSpherical = sphericalProjections.includes(props.projection)
 
   if (isSpherical) {
-    // Rotate projection to center on country
-    projection.rotate([-centroid[0], -centroid[1]])
+    // Rotate projection to center on coordinates
+    projection.rotate([-coords[0], -coords[1]])
     countriesGroup.selectAll('path').attr('d', path)
     updateLabelPositions()
   } else {
-    // Pan flat map to center on country
-    const [x, y] = projection(centroid)
+    // Pan flat map to center on coordinates
+    const [x, y] = projection(coords)
     const transform = d3.zoomIdentity
       .translate(width / 2 - x, height / 2 - y)
 
@@ -457,11 +486,11 @@ watch(() => props.showLabels, () => {
   updateLabelPositions()
 })
 
-// Center on start country when game begins or new game starts
-watch(() => props.startCountry, (newCountry, oldCountry) => {
-  if (newCountry && props.gameActive && newCountry !== oldCountry) {
+// Center on midpoint between start and end countries when game begins
+watch([() => props.startCountry, () => props.endCountry], ([newStart, newEnd], [oldStart, oldEnd]) => {
+  if (newStart && newEnd && props.gameActive && (newStart !== oldStart || newEnd !== oldEnd)) {
     // Small delay to ensure map is ready
-    setTimeout(() => centerOnCountry(newCountry), 100)
+    setTimeout(() => centerOnMidpoint(newStart, newEnd), 100)
   }
 })
 

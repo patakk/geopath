@@ -52,6 +52,10 @@ const {
   wrongGuesses,
   countryInput,
   gameWon,
+  gameLost,
+  attemptsRemaining,
+  isPerfect,
+  extraAttemptsUsed,
   lastGuessResult,
   allCountryNames,
   foundCount,
@@ -176,10 +180,17 @@ watch(lastGuessResult, (val) => {
   }
 })
 
-// Show labels when game is won
+// Show labels when game is won or lost
 watch(gameWon, (won) => {
   if (won) {
     showLabels.value = true
+  }
+})
+
+watch(gameLost, (lost) => {
+  if (lost) {
+    showLabels.value = true
+    revealPath()
   }
 })
 </script>
@@ -236,7 +247,7 @@ watch(gameWon, (won) => {
     <!-- Game Panel -->
     <div class="game-panel" :class="{ collapsed: panelCollapsed }">
       <button
-        v-if="gameActive && (gameWon || pathRevealed)"
+        v-if="gameActive && (gameWon || gameLost || pathRevealed)"
         class="collapse-btn"
         @click="panelCollapsed = !panelCollapsed"
       >
@@ -267,12 +278,14 @@ watch(gameWon, (won) => {
             <span class="country end">{{ getDisplayName(endCountry) }}</span>
           </div>
           <div class="game-stats">
-            <span class="stat">{{ foundCount }}/{{ totalToFind }} found</span>
+            <span class="stat">{{ attemptsRemaining }} attempts remaining</span>
           </div>
         </div>
 
-        <div v-if="gameWon || pathRevealed" class="path-result" v-show="!panelCollapsed">
-          <div v-if="gameWon" class="win-message">You found the path!</div>
+        <div v-if="gameWon || gameLost || pathRevealed" class="path-result" v-show="!panelCollapsed">
+          <div v-if="gameWon && isPerfect" class="win-message perfect">Perfect! You found the shortest path!</div>
+          <div v-else-if="gameWon" class="win-message">You found a path! ({{ extraAttemptsUsed }} extra attempt{{ extraAttemptsUsed !== 1 ? 's' : '' }} used)</div>
+          <div v-else-if="gameLost" class="lose-message">Game over! The path was:</div>
           <div v-if="sortedPaths.length > 1" class="paths-header">
             {{ sortedPaths.length }} possible paths:
           </div>
@@ -297,7 +310,7 @@ watch(gameWon, (won) => {
           </div>
         </div>
 
-        <div v-else class="guess-section">
+        <div v-else-if="!gameLost" class="guess-section">
           <div class="input-container">
             <div class="input-wrapper">
               <input
@@ -699,6 +712,23 @@ watch(gameWon, (won) => {
   border: 1px solid var(--accent-green-border);
   border-radius: 4px;
   color: var(--accent-green);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.win-message.perfect {
+  background: var(--accent-blue-bg);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.lose-message {
+  padding: 10px 12px;
+  background: var(--accent-red-bg);
+  border: 1px solid var(--accent-red);
+  border-radius: 4px;
+  color: var(--accent-red);
   font-size: 13px;
   font-weight: 500;
   text-align: center;
