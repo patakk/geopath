@@ -443,10 +443,17 @@ function centerOnMidpoint(country1, country2) {
     (centroid1[1] + centroid2[1]) / 2
   ]
 
-  centerOnCoordinates(midpoint)
+  // Calculate distance between countries to determine zoom level
+  const distance = d3.geoDistance(centroid1, centroid2)
+  // Convert radians to a zoom level (smaller distance = higher zoom)
+  // distance ranges roughly 0.1 (nearby) to 3 (opposite sides of earth)
+  // We want zoom roughly 1.5-4 depending on distance
+  const zoom = Math.max(1.5, Math.min(4, 1.2 / distance))
+
+  centerOnCoordinates(midpoint, zoom)
 }
 
-function centerOnCoordinates(coords) {
+function centerOnCoordinates(coords, zoomLevel = 1) {
   if (!svg) return
 
   const container = mapContainer.value
@@ -457,21 +464,27 @@ function centerOnCoordinates(coords) {
   const isSpherical = sphericalProjections.includes(props.projection)
 
   if (isSpherical) {
-    // Rotate projection to center on coordinates
+    // Rotate projection to center on coordinates and adjust scale for zoom
     projection.rotate([-coords[0], -coords[1]])
+    const baseScale = Math.min(width, height) / 2.2
+    projection.scale(baseScale * zoomLevel)
+    currentZoom = zoomLevel
     countriesGroup.selectAll('path').attr('d', path)
     updateLabelPositions()
+    updateLabelSizes()
   } else {
-    // Pan flat map to center on coordinates
+    // Pan and zoom flat map to center on coordinates
     const [x, y] = projection(coords)
     const transform = d3.zoomIdentity
-      .translate(width / 2 - x, height / 2 - y)
+      .translate(width / 2, height / 2)
+      .scale(zoomLevel)
+      .translate(-x, -y)
 
     svg.transition()
       .duration(500)
       .call(d3.zoom().transform, transform)
 
-    currentZoom = 1
+    currentZoom = zoomLevel
     countriesGroup.attr('transform', transform)
     labelsGroup.attr('transform', transform)
     updateLabelSizes()

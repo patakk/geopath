@@ -4,7 +4,7 @@ import WorldMap from './components/WorldMap.vue'
 import { useCountryGame } from './composables/useCountryGame'
 
 const showLabels = ref(true)
-const currentProjection = ref('mercator')
+const currentProjection = ref('globe')
 const projectionsExpanded = ref(false)
 const highDetail = ref(false)
 
